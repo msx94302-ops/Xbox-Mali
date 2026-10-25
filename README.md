@@ -16,7 +16,7 @@ include the native core's C/C++ source tree.
 ## Sources
 
 - The FEX fork ([rfandango/FEX](https://github.com/rfandango/FEX), branch
-  `hakuX`) is the submodule `external/fex`, with the FEX submodules it builds
+ is the submodule `external/fex`, with the FEX submodules it builds
   with:
 
   ```
@@ -25,7 +25,7 @@ include the native core's C/C++ source tree.
     External/rpmalloc External/unordered_dense External/xxhash Source/Common/cpp-optparse
   ```
 
-  CMake `HAKUX_FEX_DIR` names another checkout instead.
+  CMake `xbox` names another checkout instead.
 - The core's third-party sources, outside the repository (CMake `NC_DEPS`):
 
 | Path in `NC_DEPS` | Revision |
