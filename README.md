@@ -1,4 +1,4 @@
-# Building hakuX
+# Building Xbox Xemu
 
 The app (this directory) builds no native code itself: it packs the native
 core's libraries from `app/src/main/jniLibs`. This modified Termux bundle includes
