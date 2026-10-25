@@ -1,60 +1,77 @@
-# Xbox-Mali
-Projeto Android Xbox Mali — interface de controles virtuais inspirada no Xbox Original Classico, otimizações visuais, correções de renderização.
+# Building hakuX
 
-🎮 Xbox Mali
+The app (this directory) builds no native code itself: it packs the native
+core's libraries from `app/src/main/jniLibs`. This modified Termux bundle includes
+the prebuilt ARM64 libraries extracted from the user-supplied APK, so UI-only
+changes can be rebuilt without compiling the native core. The bundle does not
+include the native core's C/C++ source tree.
 
-Versão: 0.0.1
-Plataforma: Android
-Tecnologia: Kotlin, Android SDK e Gradle
+## Toolchain for this bundle
 
-📌 Sobre o projeto
+- Android SDK Platform 36
+- Build Tools 35.0.0
+- JDK 21
+- No NDK/CMake is needed when using the included prebuilt native libraries
 
-O Xbox Mali é um projeto Android voltado à personalização e ao aprimoramento visual de controles virtuais para jogos, com foco em dispositivos Android equipados com GPUs ARM Mali.
+## Sources
 
-O projeto busca oferecer uma interface inspirada no controle clássico do Xbox 360, com botões coloridos, organização intuitiva e melhorias na renderização dos elementos gráficos.
+- The FEX fork ([rfandango/FEX](https://github.com/rfandango/FEX), branch
+  `hakuX`) is the submodule `external/fex`, with the FEX submodules it builds
+  with:
 
-✨ Objetivos
+  ```
+  git submodule update --init external/fex
+  git -C external/fex submodule update --init External/fmt External/range-v3 \
+    External/rpmalloc External/unordered_dense External/xxhash Source/Common/cpp-optparse
+  ```
 
-- 🎮 Interface de controle virtual inspirada no Xbox 360.
-- 🟢 Botão A verde.
-- 🔴 Botão B vermelho.
-- 🔵 Botão X azul.
-- 🟡 Botão Y amarelo.
-- 🛠️ Melhorias visuais e correções de artefatos gráficos.
-- 📱 Compatibilidade com dispositivos Android, sujeita a testes.
-- 🔧 Código-fonte preparado para desenvolvimento e compilação com Gradle.
+  CMake `HAKUX_FEX_DIR` names another checkout instead.
+- The core's third-party sources, outside the repository (CMake `NC_DEPS`):
 
-📦 Informações
+| Path in `NC_DEPS` | Revision |
+|---|---|
+| `volk` | 1.4.304 |
+| `glslang` | 16.1.0 |
+| `spirv_reflect` | vulkan-sdk-1.4.328.0 |
+| `vma` | v3.3.0 |
+| `SDL3` | release-3.4.18 |
+| `adrenotools` | 8fae8ce |
+| `root/subprojects/nv2a_vsh_cpu` | 561fe80 |
 
-- Nome: Xbox Mali
-- Versão: 0.0.1
-- Identificador pretendido: "com.xboxmali.emulator"
-- Sistema: Android
+## Steps
 
-«O identificador do pacote e a versão devem ser confirmados na configuração final do APK.»
+From the repository root:
 
-🏗️ Compilação
-
-O projeto utiliza Gradle. Para compilar uma versão de depuração, execute na pasta raiz do projeto:
-
+```
+cmake -S native -B build/native/core -G Ninja \
+  -DCMAKE_TOOLCHAIN_FILE=<ndk>/build/cmake/android.toolchain.cmake \
+  -DANDROID_ABI=arm64-v8a -DANDROID_PLATFORM=android-28 -DCMAKE_BUILD_TYPE=Release \
+  -DNC_DEPS=<native-deps>
+ninja -C build/native/core hakuxcore
+bash tools/native/app-libs.sh
+cd android
 ./gradlew assembleDebug
+```
 
-O APK normalmente será gerado em:
+`app-libs.sh` copies the core, SDL3 and adrenotools' hook libraries into
+`app/src/main/jniLibs`, stripped. Run it again after each core build: the
+APK packs whatever is there.
 
-"app/build/outputs/apk/debug/app-debug.apk"
+A release build (`assembleRelease`) is signed with the keystore that
+`key.properties` names (`storeFile`, `storePassword`, `keyAlias`,
+`keyPassword`).
 
-É necessário ter um ambiente Android compatível com as dependências do projeto.
+## Host tests
 
-🧪 Estado do projeto
+The HLE layer's pure modules have host tests (any C compiler with CMake):
 
-Versão inicial de desenvolvimento. A compatibilidade, o desempenho e as correções gráficas precisam ser verificados nos dispositivos e jogos testados.
+```
+cmake -S tests/hle -B build/hle-tests -G Ninja
+ninja -C build/hle-tests
+cd build/hle-tests && ctest
+```
 
-🤝 Contribuições
+## Debug builds
 
-Sugestões, relatos de erros e contribuições são bem-vindos por meio das Issues e Pull Requests do GitHub.
-
-⚠️ Aviso
-
-Xbox Mali é um projeto independente e não é afiliado, patrocinado ou endossado pela Microsoft ou pela Xbox.
-
-
+Debug builds also carry the Khronos validation layer, which Android loads
+on request (see [app/src/debug/jniLibs/arm64-v8a/README.md](app/src/debug/jniLibs/arm64-v8a/README.md)).
